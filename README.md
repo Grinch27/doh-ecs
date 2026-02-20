@@ -1,0 +1,64 @@
+# cf-workers-doh
+
+[中文版 README ](https://github.com/simplerick-simplefun/cf-workers-doh/blob/main/README-CN.md)
+
+## **A DNS-over-HTTPS Proxy with "Auto ECS" feature**
+
+Proxy DoH (DNS-over-HTTPS) with "Auto ECS" (EDNS Client Subnet) on Cloudflare Workers.
+
+- **`ECS:`** DNS DoH request with ECS produces DNS response that give accurate geo-located responses to the subnet specified in ECS when responding to name lookups. Refer to [https://developers.google.com/speed/public-dns/docs/ecs](https://developers.google.com/speed/public-dns/docs/ecs).
+
+  > This is especially useful in DNS Proxy, as normally DNS Proxy produce DNS response that is geographically close to _**IP of the DNS Proxy**_, not the _**IP of the actual client**_ sending DNS query/request (to DNS Proxy).
+
+- **`Auto ECS:`** Automatically attach _end-user's IP_ as EDNS Client Subnet (ECS) when proxying DoH request to upstream DoH service.
+
+**With "Auto ECS" feature, DNS Proxy will be able to produce DNS response geographically close to _IP of the actual client_.**
+
+**WARNING:** Designed to be completely compatible with [Google Public DNS](https://developers.google.com/speed/public-dns/docs/secure-transports) as upstream. Outcomes may vary when using other DNS providers as upstream.
+
+## Features:
+
+- Automatically attach EDNS Client Subnet (ECS) field when proxying DoH request to upstream DoH service. Use end-user's IP (the IP sending DoH request to the DNS Proxy) as base for the subnet.
+  - Subnet Prefix: IPv4 /24 IPv6 /56, last digits are zeroed out.
+  - Does not add/change ECS field when proxied DoH request already contains ECS field.
+  - Note that not all public DNS services support DoH with ECS. Google DoH supports ECS and is therefore set as default. Check [Public DNS Services](https://github.com/curl/curl/wiki/DNS-over-HTTPS) to see other public DNS services.
+- Supporting DoH methods:
+  - [GET /dns-query](https://developers.google.com/speed/public-dns/docs/doh#methods)
+  - [POST /dns-query](https://developers.google.com/speed/public-dns/docs/doh#methods)
+  - [GET /resolve (Google JSON API)](https://developers.google.com/speed/public-dns/docs/doh/json)
+
+## Installation
+
+- One-click deploy to Cloudflare Workers:
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/Grinch27/cf-workers-doh-ecs)
+
+- Or deploy with Wrangler:
+  1. `npm i -g wrangler`
+  2. `wrangler login`
+  3. Edit variables in `wrangler.toml`
+  4. `wrangler deploy`
+
+- Configurable variables (no code changes needed):
+
+| Variable               | Default                        | Description                                               |
+| ---------------------- | ------------------------------ | --------------------------------------------------------- |
+| `UPSTREAM_DNS_QUERY`   | `https://dns.google/dns-query` | Upstream DoH binary endpoint for query requests           |
+| `UPSTREAM_RESOLVE`     | `https://dns.google/resolve`   | Upstream JSON endpoint for resolve requests               |
+| `REQ_QUERY_PATHNAME`   | `/dns-query`                   | Public query path (can be changed to `/masked-dns-query`) |
+| `REQ_RESOLVE_PATHNAME` | `/resolve`                     | Public resolve path (can be changed to `/masked-resolve`) |
+
+- Backward-compatible variable names are also supported: `URL_UPSTREAM_DNS_QUERY`, `URL_UPSTREAM_RESOLVE`.
+- For Mainland China users:
+  - you might need a custom domain to bypass GFW. Cloudflare Workers' default domain name might be banned in your region.
+  - **HIGHLY RECOMMENDED:** change your DNS request paths to reduce sniffing/blocking risk, e.g. set `REQ_QUERY_PATHNAME=/masked-dns-query` and `REQ_RESOLVE_PATHNAME=/masked-resolve`.
+
+## Limitations:
+
+- Since the DNS Proxy is deployed on Cloudflare Workers (and possibly other server-less services), it can only be accessed through domain name. Accessing the DNS Proxy with "https://ip" is not possible in this kind of deployment.
+
+## Credit
+
+- **Code Base**:
+  - [https://github.com/tina-hello/doh-cf-workers](https://github.com/tina-hello/doh-cf-workers)
+  - [https://github.com/GangZhuo/cf-doh](https://github.com/GangZhuo/cf-doh)

@@ -1,0 +1,9 @@
+name = "doh-ecs"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+[vars]
+UPSTREAM_DNS_QUERY = "https://dns.google/dns-query"
+UPSTREAM_RESOLVE = "https://dns.google/resolve"
+REQ_QUERY_PATHNAME = "/google_dns-query"
+REQ_RESOLVE_PATHNAME = "/google_resolve"
